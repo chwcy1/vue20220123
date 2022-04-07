@@ -1,0 +1,7 @@
+/* 复制索引进度 */
+查看之前的中国数据命令
+curl http://172.22.186.80:9200/_cat/indices/index_china?v
+查看复制的中国数据
+curl http://172.22.186.80:9200/_cat/indices/index_china2?v
+
+curl -X GET "localhost:9200/_tasks?detailed=true&actions=*reindex&pretty"

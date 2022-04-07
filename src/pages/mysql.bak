@@ -1,0 +1,205 @@
+<template>
+	<div class="home">
+		<el-breadcrumb style="font-size: 20px;margin: 10px 20px;" separator="/">
+			<el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
+			<el-breadcrumb-item>专利数据库</el-breadcrumb-item>
+		</el-breadcrumb>
+		<p class="title">公共专利数据库</p>
+		
+		<el-tree ref="tree" :data="all2" :props="props" :load="loadNode2" lazy>
+			<span style="display: flex;width: 100%;" class="custom-tree-node" slot-scope="{ node,data }">
+				<div style="width: 20%;text-align: left;">
+					{{node.label}}
+				</div>
+				<div style="width: 60%;text-align: left;">{{ data.expression }}</div>
+				<el-button style="text-align: right;" size="mini" type="text" @click.stop="show(data,2)">查看详情
+				</el-button>
+			</span>
+		</el-tree>
+
+		<p class="title">个人专利数据库</p>
+
+		<el-tree ref="tree" :data="all" :props="props" :load="loadNode" lazy>
+			<span style="display: flex;width: 100%;" class="custom-tree-node" slot-scope="{ node,data }">
+				<div style="width: 20%;text-align: left;">
+					{{node.label}}
+				</div>
+				<div style="width: 60%;text-align: left;">{{ data.expression }}</div>
+				<el-button style="text-align: right;" size="mini" type="text" @click.stop="show(data,1)">查看详情
+				</el-button>
+			</span>
+		</el-tree>
+
+		<el-dialog title="提示" :visible.sync="see" width="30%" center>
+			<p class="list_data">路径：{{detail.path=='/'?detail.path:detail.path+'/'}}{{detail.name}}</p>
+			<p class="list_data">创建人：{{detail.owner}}</p>
+			<p class="list_data">类型：{{detail.is_private?'私有':'共有'}}</p>
+			<p class="list_data">数据库：<el-tag v-for="item in detail.db" style="margin-right: 10px;">{{item}}</el-tag>
+			</p>
+			<p class="list_data">检索式：{{detail.expression}}</p>
+			<p class="list_data">是否是中英文检索：{{detail.is_cross_language}}</p>
+			<p class="list_data">是否是企业名称关联检索：{{detail.is_include_company}}</p>
+			<p class="list_data">是否是同义词检索：{{detail.is_include_synonym}}</p>
+			<span slot="footer" class="dialog-footer">
+				<el-button type="danger" @click="del()">删 除</el-button>
+				<el-button type="primary" @click="getIn()">进 入</el-button>
+			</span>
+		</el-dialog>
+	</div>
+</template>
+
+<script>
+	import {
+		topic_list,
+		topic_del
+	} from '../api/user.js'
+	import {
+		search,
+		search_result
+	} from '../api/search.js'
+	export default {
+		name: 'HelloWorld',
+		data() {
+			return {
+				first: true,
+				is_private: 1,
+				list: [],
+				all: [],
+				detail: {},
+				see: false,
+				props: {
+					label: 'name',
+				},
+			}
+		},
+		mounted() {
+			var query = {}
+			query.path = '/'
+			query.is_private = true
+			topic_list(query).then(res => {
+				console.log(res.topics)
+				this.all = res.topics
+				this.first = false;
+			})
+			var query2 = {}
+			query2.path = '/'
+			query2.is_private = false
+			topic_list(query2).then(res => {
+				console.log(res.topics)
+				this.all2 = res.topics
+				this.first = false;
+			})
+		},
+		methods: {
+			getIn(){
+				var query = {}
+				query.expr = this.detail.expression
+				query.is_cross_language = this.detail.is_cross_language
+				query.is_include_synonym = this.detail.is_include_synonym
+				query.is_include_company = this.detail.is_include_company
+				query.countries = this.detail.db.join(',')
+				search(query).then(res => {
+						localStorage.setItem('search', res.id)
+						localStorage.setItem('expr', query.expr)
+						this.$message.success(res.id)
+						this.$router.push('/search-result')
+				})
+			},
+			del() {
+				var query = {}
+				query.path = this.detail.path
+				query.name = this.detail.name
+				query.force = true
+				if (this.is_private == 1) {
+					query.is_private = true
+					topic_del(query).then(res => {
+						console.log(res)
+						this.$message.success('已成功删除' + res.delete_count + '个数据库')
+						this.see = false
+						location.reload()
+					})
+				}
+				else {
+					query.is_private = false
+					topic_del(query).then(res => {
+						console.log(res)
+						this.$message.success('已成功删除' + res.delete_count + '个数据库')
+						this.see = false
+						location.reload()
+					})
+				}
+			},
+			show(data,id) {
+				this.detail = data
+				this.see = true
+				this.is_private = id
+			},
+			loadNode(node, resolve) {
+				if (!this.first) {
+					console.log(node)
+					var query = {}
+					query.path = node.data.path + node.data.name
+					query.is_private = true
+					topic_list(query).then(res => {
+						if (res) {
+							return resolve(res.topics);
+						} else {
+							return resolve();
+						}
+					})
+				}
+			},
+			loadNode2(node, resolve) {
+				if (!this.first) {
+					console.log(node)
+					var query = {}
+					query.path = node.data.path + node.data.name
+					query.is_private = false
+					topic_list(query).then(res => {
+						if (res) {
+							return resolve(res.topics);
+						} else {
+							return resolve();
+						}
+					})
+				}
+			},
+		}
+	}
+</script>
+
+<style scoped>
+	.home {
+		padding: 20px;
+		width: 80%;
+		margin: 0 auto;
+	}
+	.title {
+		text-align: left;
+		padding-left: 20px;
+		font-size: 17px;
+		margin-top: 30px;
+		font-weight: 600;
+	}
+	.list {
+		padding: 20px;
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+	}
+	.card {
+		margin-bottom: 15px;
+		width: 250px;
+		height: 90px;
+		background-repeat: no-repeat;
+		background-image: url(../assets/bg.png);
+		background-size: cover;
+		border-radius: 5px;
+		line-height: 90px;
+		font-weight: 600;
+		color: #1DA1F2;
+	}
+	.list_data {
+		line-height: 20px;
+		margin-top: 10px;
+	}
+</style>

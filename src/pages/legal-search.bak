@@ -1,0 +1,145 @@
+<template>
+	<div class="home" style="max-width:1100px;margin:auto">
+		<div style="font-size: 20px; padding: 10px 0; font-weight: normal; border-bottom: dashed 1px #DCDFE6">
+			<!--<span @click="this.$router.push('/Home')"></span>检索系统<span style="padding:0 15px">/</span>-->
+			<table style="width:100%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<td width="1" style="padding-top:3px;padding-right:7px">
+						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-grip-vertical" viewBox="0 0 16 16">
+							<path d="M7 2a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM7 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-3 3a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z" />
+						</svg>
+					</td>
+					<td valign="top" align="left">
+						法律状态检索
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div style="width:100%;padding:10px 0"></div>
+		<el-tabs style="width:100%" type="border-card" shadow="never">
+			<el-tab-pane label="中国法律状态检索">
+				<el-form class="myForm" label-width="80px" :model="form">
+					<el-form-item label="申请号">
+						<el-input v-model.trim="form.zlh" placeholder="例如:CN98803865.X"></el-input>
+					</el-form-item>
+					<el-form-item label="公告日">
+						<el-input v-model="form.region" placeholder="例如:20101010"></el-input>
+					</el-form-item>
+					<el-form-item label="状态">
+						<el-input v-model="form.type" placeholder="例如:公开"></el-input>
+					</el-form-item>
+					<el-form-item label="详情">
+						<el-input v-model="form.data" placeholder="请输入内容"></el-input>
+					</el-form-item>
+				</el-form>
+				<div>
+					<el-button type="primary" @click="onSubmit">检索</el-button>
+					<el-button @click="form = {}">清空</el-button>
+				</div>
+			</el-tab-pane>
+		</el-tabs>
+		<el-card v-if="!first" v-loading="loading" style="margin: 20px;text-align: left;">
+			<div class="title">
+				<span style="margin-left: 10px;">申请号：</span>
+				<span style="color: #1DA1F2;">{{result.zlh}}</span>
+			</div>
+			<div class="detail">
+				<div><strong>标题：</strong>{{result.title}}</div>
+				<!-- <div><strong>最终法律状态：</strong>
+				<el-tag>{{result.sub_law_stat}}</el-tag>
+			</div> -->
+				<div>
+					<strong>法律状态信息：</strong>
+					ng
+					su
+					<el-tag>{{result.main_law_stat}}</el-tag>
+				</div>
+			</div>
+			<el-timeline>
+				<el-timeline-item v-for="item in result.raw_law_stats" :timestamp="item.law_date" placement="top">
+					<el-card>
+						<h4>法律状态类型：{{item.law_stat}}</h4>
+						<p v-html="item.law_note"></p>
+					</el-card>
+				</el-timeline-item>
+			</el-timeline>
+		</el-card>
+	</div>
+</template>
+
+<script>
+	import {
+		law_stat
+	} from '../api/search.js'
+	export default {
+		name: 'HelloWorld',
+		data() {
+			return {
+				loading: false,
+				first: true,
+				form: {
+					zlh:'',
+				},
+				result: {}
+			}
+		},
+		mounted() {},
+		watch: {
+			'form.zlh': { // 深度监听，可监听到对象、数组的变化
+				handler (val, oldVal) {
+				this.form.zlh = val.toUpperCase()
+				},
+				deep: true
+			}
+		},
+		methods: {
+			onSubmit() {
+				if (!this.form.zlh) {
+					this.$message.warning("申请号必须输入")
+				} else {
+					this.loading = true
+					this.first = false
+					law_stat(this.form).then(res => {
+						if (res) {
+							this.result = res
+							this.result.zlh = this.form.zlh
+							this.result.data = '暂无相关信息'
+						}
+						this.loading = false
+					})
+				}
+			}
+		}
+	}
+</script>
+
+<style scoped>
+  .home {
+    /*text-align: left;*/
+    padding: 20px;
+    /*width: 80%;
+    margin: 0 auto;*/
+  }
+
+	.myForm {
+		margin: 10px 10px 10px 50px;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.title {
+		width: 100%;
+		background-color: #EBEEF5;
+		border-radius: 3px;
+		height: 40px;
+		line-height: 40px;
+		border: #909399 solid 1px;
+	}
+
+	.detail {
+		padding: 10px;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		grid-gap: 10px;
+	}
+</style>

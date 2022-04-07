@@ -1,0 +1,15 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\api",
+    "\\src\\assets",
+    "\\src\\pages",
+    "\\src\\pages\\charts",
+    "\\src\\router",
+    "\\src\\utils",
+    "\\static",
+    "\\static\\js"
+  ],
+  "PreviewInSolutionExplorer": false
+}
